@@ -1,40 +1,52 @@
 (function () {
   try {
-    // ---- Session ID handling ----
-    var sessionKey = 'dmhq_session_id';
-
-    function generateGuid() {
-      // RFC4122 version 4–style UUID
-      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        var r = (Math.random() * 16) | 0;
-        var v = c === 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-      });
+    // --- helpers ---
+    function getParamFromCurrentScript(name) {
+      var s = document.currentScript && document.currentScript.src;
+      if (!s) {
+        // fallback: find by id used in GTM
+        var el = document.getElementById('dmhq-lib');
+        s = el && el.src;
+      }
+      if (!s) return null;
+      var m = s.match(new RegExp('[?&]' + name + '=([^&#]+)'));
+      return m ? decodeURIComponent(m[1]) : null;
     }
 
-    // Get or create session ID
-    var sessionId = sessionStorage.getItem(sessionKey);
-    if (!sessionId) {
-      sessionId = generateGuid();
-      sessionStorage.setItem(sessionKey, sessionId);
-      console.log('[DMHQ] New sessionId generated:', sessionId);
-    } else {
-      console.log('[DMHQ] Existing sessionId found:', sessionId);
+    function injectScript(id, src) {
+      if (document.getElementById(id)) return;
+      var tag = document.createElement('script');
+      tag.async = true;
+      tag.src = src;
+      tag.id = id;
+      var first = document.getElementsByTagName('script')[0];
+      first.parentNode.insertBefore(tag, first);
     }
 
-    console.log('[DMHQ] External script loaded via GTM');
- 
+    // --- parse account id from query ---
+    var aid = getParamFromCurrentScript('aid');
+    if (!aid) {
+      console.warn('[DMHQ] lib.js: missing account id (aid).');
+      return;
+    }
 
-    // ---- Push to dataLayer ----
+    // --- build account script URL ---
+    // Structure suggestion in your repo:
+    // /accounts/<ACCOUNT_ID>.js
+    var ACCOUNT_SCRIPT_URL =
+      'https://cdn.jsdelivr.net/gh/sjh1392/dmhq-gtm@main/accounts/' + encodeURIComponent(aid) + '.js';
+
+    // --- load account script ---
+    injectScript('dmhq-account-' + aid, ACCOUNT_SCRIPT_URL);
+
+    // Optional: dataLayer ping
     window.dataLayer = window.dataLayer || [];
     window.dataLayer.push({
-      event: 'dmhq_ext_loaded',
-
-      sessionId: sessionId,
+      event: 'dmhq_lib_loaded',
+      accountId: aid,
       ts: Date.now()
     });
-
   } catch (e) {
-    console.error('[DMHQ] loader error:', e);
+    console.error('[DMHQ] lib.js error:', e);
   }
 })();
