@@ -32,9 +32,9 @@
 
     // --- build account script URL ---
     // Structure suggestion in your repo:
-    // /accounts/<ACCOUNT_ID>.js
+    // /<ACCOUNT_ID>.js
     var ACCOUNT_SCRIPT_URL =
-      'https://cdn.jsdelivr.net/gh/sjh1392/dmhq-gtm@main/accounts/' + encodeURIComponent(aid) + '.js';
+      'https://cdn.jsdelivr.net/gh/sjh1392/dmhq-gtm@main/' + encodeURIComponent(aid) + '.js';
 
     // --- load account script ---
     injectScript('dmhq-account-' + aid, ACCOUNT_SCRIPT_URL);
